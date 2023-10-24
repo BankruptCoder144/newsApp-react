@@ -1,16 +1,16 @@
-import logo from './logo.svg';
 import './App.css';
-import {Component} from "react";
+import React, {Component} from "react";
 import MyNavBar from "./components/MyNavBar";
-import News from "./components/News";
+import {Outlet} from "react-router-dom";
 
 export default class App extends Component {
-  render() {
-    return (
-        <div>
-          <MyNavBar/>
-            <News pageSize={5} country={'us'} category={'science'}/>
-        </div>
-    )
-  }
+
+    render() {
+        return (
+            <div>
+                <MyNavBar/>
+                <Outlet/>
+            </div>
+        )
+    }
 }

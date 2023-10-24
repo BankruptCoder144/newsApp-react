@@ -1,81 +1,85 @@
-import React, {Component} from 'react';
+import React, {useEffect, useState} from 'react';
 import NewsItem from "./NewsItem";
-import {Button} from "react-bootstrap";
 import MySprinner from "./MySprinner";
 import PropTypes from "prop-types";
+import InfiniteScroll from "react-infinite-scroll-component";
 
-class News extends Component {
+const News = (props) => {
 
-    static defaultProps = {
-        pageSize:9,
-        country: 'in',
-        category: 'general'
-    }
+    const apiKey = process.env.REACT_APP_NEWS_API
 
-    static propTypes = {
-        pageSize : PropTypes.number,
-        country: PropTypes.string,
-        category: PropTypes.string
-    }
-    constructor(props) {
-        super(props);
-        this.state = {
-            articles: [],
-            page: 1,
-            totalArticles: 1,
-            loading: false
-        }
-    }
+    const [articles, setArticles] = useState([])
+    const [page, setPage] = useState(1)
+    const [totalArticles, setTotalArticles] = useState(0)
+    useEffect(() => {
+        setPageState(page)
+    },[])
 
-    componentDidMount() {
-        this.setPageState(this.state.page)
-    }
-
-    async setPageState(page) {
-        let url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=350267cd86cd487b9639ddffa79341f4&page=${page}&pageSize=${this.props.pageSize}`
-        this.setState({
-            loading:true
-        })
+    const setPageState = async (page) => {
+        props.setProgress(10)
+        let url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=${apiKey}&page=${page}&pageSize=${props.pageSize}`
         let data = await fetch(url)
         let jsonData = await data.json()
         console.log(jsonData)
-        this.setState({
-            articles: jsonData.articles,
-            page: page,
-            totalArticles: jsonData.totalResults,
-            loading: false})
-    }
-    handleNextClick=()=> {
-        this.setPageState(this.state.page + 1)
+        setArticles(articles.concat(jsonData.articles))
+        setPage(page)
+        setTotalArticles(jsonData.totalResults)
+        props.setProgress(100)
     }
 
-    handlePreviousClick=()=> {
-        this.setPageState(this.state.page - 1)
+    const fetchNextUsers = () => {
+        setPageState(page + 1)
     }
 
-    render() {
+    // const handleNextClick = () => {
+    //     this.setPageState(page + 1)
+    // }
+    //
+    // const handlePreviousClick = () => {
+    //     this.setPageState(page - 1)
+    // }
 
-        return (
+    return (
         <>
             <div className={"container"}>
-                <h2 className={"text-center"}>Top Headlines</h2>
-                {this.state.loading && <MySprinner/>}
-                { !this.state.loading && <div className="row">
-                    {this.state.articles.map((element)=>{
-                        return <div className="col-md-4" key={element.url}>
-                            <NewsItem imageUrl={element.urlToImage} title={element.title} description={element.description} newsUrl={element.url}/>
-                        </div>
-                    })}
-                </div>
-                }
+                <h2 className={"text-center"} style={{marginTop :'60px'}}>Top Headlines - {props.category}</h2>
+                {/*{this.state.loading && <MySprinner/>}*/}
+                <InfiniteScroll
+                    dataLength={articles.length}
+                    next={fetchNextUsers}
+                    hasMore={articles.length < totalArticles}
+                    loader={<MySprinner/>}
+                >
+                    <div className="row">
+                        {articles.map((element) => {
+                            return <div className="col-md-4" key={element.url}>
+                                <NewsItem imageUrl={element.urlToImage} title={element.title}
+                                          description={element.description} newsUrl={element.url}/>
+                            </div>
+                        })}
+                    </div>
+                </InfiniteScroll>
             </div>
-            <div className="container d-flex justify-content-between">
-                <Button variant="dark" disabled={this.state.page<=1} onClick={this.handlePreviousClick}>&larr; Previous</Button>
-                <Button variant="dark" disabled={this.state.page>=Math.ceil(this.state.totalArticles/this.props.pageSize)} onClick={this.handleNextClick}>Next &rarr;</Button>
-            </div>
+            {/*<div className="container d-flex justify-content-between">*/}
+            {/*    <Button variant="dark" disabled={this.state.page <= 1}*/}
+            {/*            onClick={this.handlePreviousClick}>&larr; Previous</Button>*/}
+            {/*    <Button variant="dark"*/}
+            {/*            disabled={this.state.page >= Math.ceil(this.state.totalArticles / props.pageSize)}*/}
+            {/*            onClick={this.handleNextClick}>Next &rarr;</Button>*/}
+            {/*</div>*/}
         </>
-        );
-    }
+    );
+}
+export default News;
+
+News.defaultProps = {
+    pageSize: 5,
+    country: 'in',
+    category: 'general'
 }
 
-export default News;
+News.propTypes = {
+    pageSize: PropTypes.number,
+    country: PropTypes.string,
+    category: PropTypes.string
+}
